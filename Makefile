@@ -16,9 +16,9 @@ DASM		= ndisasm
 CC		= gcc
 LD		= ld
 ASMBFLAGS	= -I boot/include/
-ASMKFLAGS	= -I include/ -f elf
-CFLAGS		= -I include/ -c -fno-builtin
-LDFLAGS		= -s -Ttext $(ENTRYPOINT)
+ASMKFLAGS	= -I include/ -f elf32
+CFLAGS		= -I include/ -m32 -c -fno-builtin -fno-stack-protector
+LDFLAGS		= -s -melf_i386 -Ttext $(ENTRYPOINT)
 DASMFLAGS	= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 
 # This Program
@@ -30,11 +30,14 @@ OBJS		= kernel/kernel.o kernel/syscall.o kernel/start.o kernel/main.o kernel/clo
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
-.PHONY : everything final image clean realclean disasm all buildimg
+.PHONY : everything final image clean realclean disasm all buildimg run
 
 # Default starting position
 nop :
 	@echo "why not \`make image' huh? :)"
+
+run:
+	bochs -q -f bochsrc.bxrc
 
 everything : $(ORANGESBOOT) $(ORANGESKERNEL)
 
@@ -54,10 +57,10 @@ disasm :
 # We assume that "a.img" exists in current folder
 buildimg :
 	dd if=boot/boot.bin of=a.img bs=512 count=1 conv=notrunc
-	sudo mount -o loop a.img /mnt/floppy/
-	sudo cp -fv boot/loader.bin /mnt/floppy/
-	sudo cp -fv kernel.bin /mnt/floppy
-	sudo umount /mnt/floppy
+# sudo mount -o loop a.img /media/floppy/
+# sudo cp -fv boot/loader.bin /media/floppy/
+# sudo cp -fv kernel.bin /media/floppy
+# sudo umount /media/floppy
 
 boot/boot.bin : boot/boot.asm boot/include/load.inc boot/include/fat12hdr.inc
 	$(ASM) $(ASMBFLAGS) -o $@ $<
