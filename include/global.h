@@ -29,3 +29,14 @@ extern	char		task_stack[];
 extern  TASK            task_table[];
 extern	irq_handler	irq_table[];
 
+extern  SEMAPHORE* rmutex;
+extern  SEMAPHORE* wmutex;
+extern  SEMAPHORE* rnum;
+extern  SEMAPHORE* S;
+extern  SEMAPHORE* X;
+extern  SEMAPHORE* Y;
+extern  SEMAPHORE* Z;
+extern  int readcount;
+extern  int proc_current;
+extern  int writecount;
+extern  int maxreaders;

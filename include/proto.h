@@ -25,6 +25,9 @@ void restart();
 void TestA();
 void TestB();
 void TestC();
+void TestD();
+void TestE();
+void TestF();
 
 /* i8259.c */
 PUBLIC void put_irq_handler(int irq, irq_handler handler);
@@ -38,6 +41,9 @@ PUBLIC void clock_handler(int irq);
 
 /* proc.c */
 PUBLIC  int     sys_get_ticks();        /* sys_call */
+PUBLIC  void    sys_delay(int milli_seconds);     /* 调用此方法进程会在 milli_seconds 毫秒内不被分配时间片。 */
+PUBLIC  void    sys_print(char* str);        /* 输出字符串 */
+
 
 /* syscall.asm */
 PUBLIC  void    sys_call();             /* int_handler */

@@ -19,19 +19,28 @@
  *======================================================================*/
 PUBLIC void clock_handler(int irq)
 {
-	ticks++;
-	p_proc_ready->ticks--;
+	PROCESS *p;
 
+	ticks++;
+	// disp_int(ticks);
+	// disp_str("\n");
+	//p_proc_ready->ticks--;
+	//disp_int(ticks);
 	if (k_reenter != 0) {
 		return;
 	}
 
-	if (p_proc_ready->ticks > 0) {
-		return;
+	// if (p_proc_ready->ticks > 0) {
+	// 	return;
+	// }
+	for (p = proc_table; p < proc_table + NR_TASKS; p++){
+		if (p->sleep_tick > 0){
+			p->sleep_tick--;
+		}			
 	}
 
 	schedule();
-
+	
 }
 
 /*======================================================================*

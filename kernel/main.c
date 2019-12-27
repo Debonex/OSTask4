@@ -19,7 +19,7 @@
  *======================================================================*/
 PUBLIC int kernel_main()
 {
-	disp_str("-----\"kernel_main\" begins-----\n");
+	//disp_str("-----\"kernel_main\" begins-----\n");
 
 	TASK*		p_task		= task_table;
 	PROCESS*	p_proc		= proc_table;
@@ -61,9 +61,18 @@ PUBLIC int kernel_main()
 		selector_ldt += 1 << 3;
 	}
 
-	proc_table[0].ticks = proc_table[0].priority = 15;
-	proc_table[1].ticks = proc_table[1].priority =  5;
-	proc_table[2].ticks = proc_table[2].priority =  3;
+	// proc_table[0].ticks = proc_table[0].priority = 1;
+	// proc_table[1].ticks = proc_table[1].priority = 1;
+	// proc_table[2].ticks = proc_table[2].priority = 1;
+	// proc_table[3].ticks = proc_table[3].priority = 1;
+	// proc_table[4].ticks = proc_table[4].priority = 1;
+	// proc_table[5].ticks = proc_table[5].priority = 1;
+	for(int i=0;i<NR_TASKS;i++){
+		proc_table[i].sleep_tick=0;
+		proc_table[i].block=0;
+		proc_table[i].next=0;
+	}
+	
 
 	k_reenter = 0;
 	ticks = 0;
@@ -78,6 +87,19 @@ PUBLIC int kernel_main()
         put_irq_handler(CLOCK_IRQ, clock_handler); /* 设定时钟中断处理程序 */
         enable_irq(CLOCK_IRQ);                     /* 让8259A可以接收时钟中断 */
 
+	//rmutex = &(SEMAPHORE){1,0};
+	rmutex->value=1;
+	//wmutex = &(SEMAPHORE){1,0};
+	wmutex->value=1;
+	S->value=1;
+	X->value=1;
+	Y->value=1;
+	Z->value=1;
+	readcount = 0;
+	writecount=0;
+	maxreaders=3;
+	proc_current = 0;
+
 	restart();
 
 	while(1){}
@@ -88,11 +110,52 @@ PUBLIC int kernel_main()
  *======================================================================*/
 void TestA()
 {
-	int i = 0;
 	while (1) {
-		disp_str("X.");
-		milli_delay(100);
+		if(readcount>=maxreaders)continue;
+		sys_P(rmutex);
+		if(readcount==0)
+			sys_P(wmutex);
+		readcount++;
+		syscall_print("TestA start reading");	
+		sys_V(rmutex);	
+
+		for(int i=0;i<2;i++){
+			syscall_print("TestA reading");
+			syscall_delay(TICK_TIME);
+		}
+		
+
+		sys_P(rmutex);
+		readcount--;
+		syscall_print("TestA end reading");
+		if(readcount==0)sys_V(wmutex);	
+		sys_V(rmutex);
 	}
+
+	// while (1) {
+	// 	if(readcount>=maxreaders)continue;
+	// 	sys_P(Z);
+	// 	sys_P(rmutex);
+	// 	sys_P(X);
+	// 	readcount++;
+	// 	if(readcount==1)sys_P(wmutex);
+	// 	syscall_print("TestA start reading");
+	// 	sys_V(X);
+	// 	sys_V(rmutex);
+	// 	sys_V(Z);
+
+	// 	for(int i=0;i<2;i++){
+	// 		syscall_print("TestA reading");
+	// 		syscall_delay(TICK_TIME);
+	// 	}
+		
+
+	// 	sys_P(X);
+	// 	readcount--;
+	// 	syscall_print("TestA end reading");
+	// 	if(readcount==0)sys_V(wmutex);	
+	// 	sys_V(X);
+	// }
 }
 
 /*======================================================================*
@@ -100,21 +163,198 @@ void TestA()
  *======================================================================*/
 void TestB()
 {
-	int i = 0x1000;
 	while(1){
-		disp_str("B.");
-		milli_delay(100);
+		if(readcount>=maxreaders)continue;
+		sys_P(rmutex);
+		if(readcount==0)
+			sys_P(wmutex);
+		readcount++;
+		syscall_print("TestB start reading");		
+		sys_V(rmutex);	
+
+		for(int i=0;i<3;i++){
+			syscall_print("TestB reading");
+			syscall_delay(TICK_TIME);
+		}
+
+
+		sys_P(rmutex);
+		readcount--;
+		syscall_print("TestB end reading");
+		if(readcount==0)sys_V(wmutex);	
+		sys_V(rmutex);
 	}
+
+	// while (1) {
+	// 	if(readcount>=maxreaders)continue;
+	// 	sys_P(Z);
+	// 	sys_P(rmutex);
+	// 	sys_P(X);
+	// 	readcount++;
+	// 	if(readcount==1)sys_P(wmutex);
+	// 	syscall_print("TestB start reading");
+	// 	sys_V(X);
+	// 	sys_V(rmutex);
+	// 	sys_V(Z);
+
+	// 	for(int i=0;i<2;i++){
+	// 		syscall_print("TestB reading");
+	// 		syscall_delay(TICK_TIME);
+	// 	}
+		
+
+	// 	sys_P(X);
+	// 	readcount--;
+	// 	syscall_print("TestB end reading");
+	// 	if(readcount==0)sys_V(wmutex);	
+	// 	sys_V(X);
+	// }
 }
 
 /*======================================================================*
-                               TestB
+                               TestC
  *======================================================================*/
 void TestC()
 {
-	int i = 0x2000;
 	while(1){
-		disp_str("C.");
-		milli_delay(100);
+		if(readcount>=maxreaders)continue;
+		sys_P(rmutex);
+		if(readcount==0)
+			sys_P(wmutex);
+		readcount++;
+		syscall_print("TestC start reading");	
+		sys_V(rmutex);
+
+		for(int i=0;i<3;i++){
+			syscall_print("TestC reading");
+			syscall_delay(TICK_TIME);
+		}
+
+		sys_P(rmutex);
+		readcount--;
+		syscall_print("TestC end reading");
+		if(readcount==0)sys_V(wmutex);	
+		sys_V(rmutex);
+	}
+
+	// while (1) {
+	// 	if(readcount>=maxreaders)continue;
+	// 	sys_P(Z);
+	// 	sys_P(rmutex);
+	// 	sys_P(X);
+	// 	readcount++;
+	// 	if(readcount==1)sys_P(wmutex);
+	// 	syscall_print("TestC start reading");
+	// 	sys_V(X);
+	// 	sys_V(rmutex);
+	// 	sys_V(Z);
+
+	// 	for(int i=0;i<2;i++){
+	// 		syscall_print("TestC reading");
+	// 		syscall_delay(TICK_TIME);
+	// 	}
+		
+
+	// 	sys_P(X);
+	// 	readcount--;
+	// 	syscall_print("TestC end reading");
+	// 	if(readcount==0)sys_V(wmutex);	
+	// 	sys_V(X);
+	// }
+}
+
+/*======================================================================*
+                               TestD
+ *======================================================================*/
+void TestD()
+{
+	while(1){
+		syscall_P(wmutex);
+		writecount++;
+		syscall_print("TestD start writing");
+		for(int i=0;i<3;i++){
+			syscall_print("TestD is writing");
+			syscall_delay(TICK_TIME);
+		}
+		writecount--;
+		syscall_print("TestD end writing");
+		syscall_V(wmutex);
+	}
+
+	// while(1){
+	// 	sys_P(Y);
+	// 	writecount++;
+	// 	syscall_print("TestD start writing");
+	// 	if(writecount==1)sys_P(rmutex);
+	// 	sys_V(Y);
+	// 	sys_P(wmutex);		
+	// 	for(int i=0;i<3;i++){
+	// 		syscall_print("TestD is writing");
+	// 		syscall_delay(TICK_TIME);
+	// 	}
+	// 	sys_V(wmutex);
+	// 	sys_P(Y);
+	// 	writecount--;
+	// 	syscall_print("TestD end writing");
+	// 	if(writecount==0)sys_V(rmutex);
+	// 	sys_V(Y);
+	// }
+}
+
+/*======================================================================*
+                               TestE
+ *======================================================================*/
+void TestE()
+{
+	while(1){
+		syscall_P(wmutex);
+		writecount++;
+		syscall_print("TestE start writing");
+		for(int i=0;i<4;i++){
+			syscall_print("TestE is writing");
+			syscall_delay(TICK_TIME);
+		}
+		writecount--;
+		syscall_print("TestE end writing");
+		syscall_V(wmutex);
+	}
+
+	// while(1){
+	// 	sys_P(Y);
+	// 	writecount++;
+	// 	syscall_print("TestE start writing");
+	// 	if(writecount==1)sys_P(rmutex);
+	// 	sys_V(Y);
+
+	// 	sys_P(wmutex);		
+	// 	for(int i=0;i<3;i++){
+	// 		syscall_print("TestE is writing");
+	// 		syscall_delay(TICK_TIME);
+	// 	}
+	// 	sys_V(wmutex);
+
+	// 	sys_P(Y);
+	// 	writecount--;
+	// 	syscall_print("TestE end writing");
+	// 	if(writecount==0)sys_V(rmutex);
+	// 	sys_V(Y);
+	// }
+}
+
+/*======================================================================*
+                               TestF
+ *======================================================================*/
+void TestF()
+{
+	while(1){
+		char *output = "  readers is reading.  writers is writing.";
+		*(output) = readcount+'0';
+		*(output+21)=writecount+'0';
+		syscall_print(output);
+		// disp_int(readcount);
+		// disp_str(" readers is reading.");
+		// disp_str(" 0 writers is writing.");
+		// disp_str("\n");
+		syscall_delay(TICK_TIME);
 	}
 }
